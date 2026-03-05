@@ -1,5 +1,5 @@
 import numpy as np
-from ckn_utils import (
+from CKN.utils import (
     extract_patches, normalize_patches, 
     spherical_kmeans, ckn_activation, gaussian_pooling,
     optimize_W_and_eta
@@ -34,8 +34,11 @@ class CKNLayer:
         X = np.vstack(all_patches)[:max_patches]
       
         X_norm, _ = normalize_patches(X)
+
+        print(f"  Patches norm mean: {np.linalg.norm(X_norm, axis=1).mean():.3f}")  # doit être ~1.0
+        print(f"  Patches raw range: [{X.min():.3f}, {X.max():.3f}]")
         
-        self.W, self.eta = optimize_W_and_eta(X_norm, self.n_filters, self.sigma, n_pairs=n_pairs)
+        self.W, self.eta, self.sigma = optimize_W_and_eta(X_norm, self.n_filters, self.sigma, n_pairs=n_pairs)
 
     def forward(self, image):
         """

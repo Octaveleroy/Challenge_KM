@@ -49,6 +49,7 @@ def spherical_kmeans(patches, n_filters, max_iters=50):
 
     indices = np.random.choice(patches.shape[0], n_filters, replace=False)
     centroids = patches[indices].copy()
+    centroids, _ = normalize_patches(centroids)
     
     for _ in range(max_iters):
         similarities = np.dot(patches, centroids.T)
@@ -58,7 +59,8 @@ def spherical_kmeans(patches, n_filters, max_iters=50):
             cluster_points = patches[assignments == k]
             if len(cluster_points) > 0:
                 new_centroids[k] = np.sum(cluster_points, axis=0)
-                
+            else:
+                new_centroids[k] = centroids[k] 
         centroids, _ = normalize_patches(new_centroids)
         
     return centroids
@@ -77,7 +79,7 @@ def ckn_activation(normalized_patches, norms, filters, eta, sigma):
     dot_products = np.dot(normalized_patches, filters.T)
     distances_sq = 2.0 - 2.0 * dot_products
     
-    kernel_vals = np.exp(-distances_sq / (sigma ** 2))
+    kernel_vals = np.exp(-distances_sq / (2 * sigma ** 2))
     
     weighted_kernel_vals = np.sqrt(eta) * kernel_vals
     
@@ -86,21 +88,15 @@ def ckn_activation(normalized_patches, norms, filters, eta, sigma):
     return activations
 
 def gaussian_pooling(feature_map, subsampling_factor, beta):
-    """
-    Apply a anti-aliasing and pooling operator. Feature pooling of the paper. 
-    
-    :param feature_map: Feature maps. 
-    :param subsampling_factor: Reduction factor to subsample
-    :beta: Std of the gaussian filter. 
-    """
     C, H, W = feature_map.shape
-    pooled_map = np.zeros((C, H // subsampling_factor, W // subsampling_factor))
+    pooled_map = []
     
     for c in range(C):
         blurred = scipy.ndimage.gaussian_filter(feature_map[c], sigma=beta)
-        pooled_map[c] = blurred[::subsampling_factor, ::subsampling_factor]
-        
-    return pooled_map
+        subsampled = blurred[::subsampling_factor, ::subsampling_factor]
+        pooled_map.append(subsampled)
+    
+    return np.array(pooled_map)
 
 import numpy as np
 import scipy.optimize
@@ -135,10 +131,10 @@ def optimize_W_and_eta(patches, n_filters, sigma, n_pairs=1000):
         W = W_flat.reshape(n_filters, patch_dim)
         
         dist_sq_xw = 2.0 - 2.0 * np.dot(X, W.T)
-        K_xw = np.exp(-dist_sq_xw / (sigma ** 2))
+        K_xw = np.exp(-dist_sq_xw / (2 *sigma ** 2))
         
         dist_sq_yw = 2.0 - 2.0 * np.dot(Y, W.T)
-        K_yw = np.exp(-dist_sq_yw / (sigma ** 2))
+        K_yw = np.exp(-dist_sq_yw / (2 *sigma ** 2))
         
         prediction = np.sum(eta * K_xw * K_yw, axis=1)
         
@@ -162,7 +158,7 @@ def optimize_W_and_eta(patches, n_filters, sigma, n_pairs=1000):
     W_opt, _ = normalize_patches(W_opt)
     
     print(f"Final loss : {result.fun:.6f}")
-    return W_opt, eta_opt
+    return W_opt, eta_opt, sigma
 
 
 

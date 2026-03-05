@@ -58,11 +58,13 @@ class MultiClassClassicSVM:
     """
     Mutli Class One-vs-Rest type for SVM. To do multiclass predictions
     """
-    def __init__(self, num_classes=10, C=1.0, kernel='rbf', gamma=0.1):
+    def __init__(self, num_classes=10, C=1.0, kernel='rbf', gamma=0.1,degree=2, coef0=1.0):
         self.num_classes = num_classes
         self.C = C
         self.kernel_type = kernel
         self.gamma = gamma
+        self.degree = degree      # ← nouveau
+        self.coef0 = coef0  
         self.X_train = None 
         self.classifiers = [ClassicSVM(C=self.C) for _ in range(num_classes)]
 
@@ -74,6 +76,8 @@ class MultiClassClassicSVM:
                         np.sum(X2**2, axis=1) -
                         2 * np.dot(X1, X2.T))
             return np.exp(-self.gamma * sq_dists)
+        elif self.kernel_type == 'poly':
+            return (np.dot(X1, X2.T) + self.coef0) ** self.degree
 
     def fit(self, X, y):
         self.X_train = X
