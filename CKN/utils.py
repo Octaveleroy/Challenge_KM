@@ -40,13 +40,10 @@ def normalize_patches(patches, epsilon=1e-6):
 
 def spherical_kmeans(patches, n_filters, max_iters=50):
     """
-    Apprend les filtres (points d'ancrage) de manière non supervisée.
-    Cette fonction projette les centres sur la sphère unité à chaque étape.
+    Learn filters in a unsupervised manner
 
     Initialize spherical kmeans to initialize W. 
     """
-
-
     indices = np.random.choice(patches.shape[0], n_filters, replace=False)
     centroids = patches[indices].copy()
     centroids, _ = normalize_patches(centroids)
@@ -160,44 +157,3 @@ def optimize_W_and_eta(patches, n_filters, sigma, n_pairs=1000):
     print(f"Final loss : {result.fun:.6f}")
     return W_opt, eta_opt, sigma
 
-
-
-# # ==========================================
-# # TEST DES FONCTIONS (Pour vérifier que tout marche)
-# # ==========================================
-# if __name__ == "__main__":
-#     print("--- Test des briques de base du CKN ---")
-    
-#     # 1. Création d'une image fictive (3 canaux RGB, 32x32)
-#     image = np.random.randn(3, 32, 32)
-#     print(f"Image originale : {image.shape}")
-    
-#     # 2. Extraction des patchs 3x3
-#     patch_size = 3
-#     patches, (H_out, W_out) = extract_patches(image, patch_size)
-#     print(f"Patchs extraits : {patches.shape} (H_out={H_out}, W_out={W_out})")
-    
-#     # 3. Normalisation
-#     norm_patches, norms = normalize_patches(patches)
-#     print(f"Patchs normalisés : {norm_patches.shape}, Normes : {norms.shape}")
-    
-#     # 4. Apprentissage (ALGORITHME 1 COMPLET)
-#     n_filters = 16
-#     sigma = 0.5
-#     # On utilise 500 paires pour que le test tourne vite dans le terminal
-#     W, eta = optimize_W_and_eta(norm_patches, n_filters, sigma, n_pairs=500)
-#     print(f"Filtres appris (W) : {W.shape}")
-#     print(f"Poids appris (eta) : {eta.shape}")
-    
-#     # 5. Activation CKN (ALGORITHME 2 - Étape 1)
-#     # On passe bien "eta" en paramètre maintenant !
-#     activations_flat = ckn_activation(norm_patches, norms, W, eta, sigma)
-#     # On reforme l'image spatiale : (Canaux_out, H_out, W_out)
-#     activations = activations_flat.reshape(H_out, W_out, n_filters).transpose(2, 0, 1)
-#     print(f"Carte d'activation : {activations.shape}")
-    
-#     # 6. Pooling Gaussien (ALGORITHME 2 - Étapes 2 & 3)
-#     subsampling = 2
-#     beta = 1.0
-#     pooled_output = gaussian_pooling(activations, subsampling, beta)
-#     print(f"Sortie après pooling : {pooled_output.shape}")

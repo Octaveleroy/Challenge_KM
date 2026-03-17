@@ -6,34 +6,27 @@ class CKNNetwork:
     Multi-layer CKN network
     """
     def __init__(self, layers_config):
-        """
-        layers_config : liste de dicts, ex:
-        [
-            {'patch_size': 3, 'n_filters': 32, 'subsampling': 2, 'sigma': 0.6},
-            {'patch_size': 3, 'n_filters': 64, 'subsampling': 2, 'sigma': 0.6},
-        ]
-        """
         self.layers = [CKNLayer(**cfg) for cfg in layers_config]
 
     def unsup_train_all(self, images, max_patches=50000, n_pairs=2000):
         """
-        Entraîne les couches une par une (greedy layer-wise)
+        Train layer per layer
         """
-        current_maps = images  # liste d'images (C, H, W)
+        current_maps = images  # (C, H, W)
 
         for i, layer in enumerate(self.layers):
             print(f"Training layer {i+1}/{len(self.layers)}...")
             
-            # 1. Entraîner la couche courante sur les feature maps actuelles
+            # 1. Train the current layer on the actual feature maps
             layer.unsup_train(current_maps, max_patches=max_patches, n_pairs=n_pairs)
             
-            # 2. Propager TOUTES les images pour obtenir l'entrée de la couche suivante
+            # 2. Propagate to obtain the entry to the next layer
             current_maps = [layer.forward(img) for img in current_maps]
             print(f"  Output shape: {current_maps[0].shape}")
 
     def extract_features(self, images):
         """
-        Forward pass complet → vecteur de features plat pour le SVM
+        Complete forward pass and flattent for Classifier
         """
         features = []
         for img in images:

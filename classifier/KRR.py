@@ -1,7 +1,7 @@
 import numpy as np
 
 class KRRClassifier:
-    """ Kerner Ridge Regression general class""" 
+    """ Kerner Ridge Regression""" 
     def __init__(self, kernel_func ,reg= 0.1,num_classes = 10, **kernel_params):
         self.kernel_func = kernel_func
         self.reg = reg
