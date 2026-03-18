@@ -63,7 +63,7 @@ class MultiClassClassicSVM:
         self.C = C
         self.kernel_type = kernel
         self.gamma = gamma
-        self.degree = degree      # ← nouveau
+        self.degree = degree   
         self.coef0 = coef0  
         self.X_train = None 
         self.classifiers = [ClassicSVM(C=self.C) for _ in range(num_classes)]
@@ -79,21 +79,22 @@ class MultiClassClassicSVM:
         elif self.kernel_type == 'poly':
             return (np.dot(X1, X2.T) + self.coef0) ** self.degree
 
-    def fit(self, X, y):
+    def fit(self, X, y, max_samples=2000):
+        X = X.reshape(X.shape[0], -1)  # ← (N, 3, 32, 32) → (N, 3072)
+        if X.shape[0] > max_samples:
+            idx = np.random.choice(X.shape[0], max_samples, replace=False)
+            X, y = X[idx], y[idx]
         self.X_train = X
         K_train = self._compute_kernel(X, X)
-
         for c in range(self.num_classes):
             y_binary = np.where(y == c, 1, -1)
             self.classifiers[c].fit(K_train, y_binary)
 
     def predict(self, X_test):
+        X_test = X_test.reshape(X_test.shape[0], -1)  # ← même chose
         n_samples = X_test.shape[0]
         scores = np.zeros((n_samples, self.num_classes))
-
         K_test = self._compute_kernel(X_test, self.X_train)
-        
         for c in range(self.num_classes):
             scores[:, c] = self.classifiers[c].decision_function(K_test)
-
         return np.argmax(scores, axis=1)

@@ -126,11 +126,14 @@ def optimize_W_and_eta(patches, n_filters, sigma, n_pairs=1000):
         W_flat = params[:-n_filters]
         eta = params[-n_filters:]
         W = W_flat.reshape(n_filters, patch_dim)
+
+        W_norms = np.linalg.norm(W, axis=1, keepdims=True)
+        W_normed = W / np.maximum(W_norms, 1e-6)
         
-        dist_sq_xw = 2.0 - 2.0 * np.dot(X, W.T)
+        dist_sq_xw = 2.0 - 2.0 * np.dot(X, W_normed.T)
         K_xw = np.exp(-dist_sq_xw / (2 *sigma ** 2))
         
-        dist_sq_yw = 2.0 - 2.0 * np.dot(Y, W.T)
+        dist_sq_yw = 2.0 - 2.0 * np.dot(Y, W_normed.T)
         K_yw = np.exp(-dist_sq_yw / (2 *sigma ** 2))
         
         prediction = np.sum(eta * K_xw * K_yw, axis=1)
